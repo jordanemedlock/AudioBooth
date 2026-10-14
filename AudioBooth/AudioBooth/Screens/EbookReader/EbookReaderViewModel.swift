@@ -70,6 +70,7 @@ final class EbookReaderViewModel: EbookReaderView.Model {
         self.updateProgressHeaderInset()
         self.updateAutoScroll()
         self.syncReadAlongPreferences()
+        self.syncListenPreferences()
       }
       .store(in: &cancellables)
 
@@ -92,13 +93,14 @@ final class EbookReaderViewModel: EbookReaderView.Model {
 
     if isVisible, readAlong == nil {
       supportsReadAlong = isReadAlongSupported
+      supportsListen = isListenSupported
       refreshCatchUpOffer()
     }
   }
 
   func updateAutoScroll() {
     if preferences.autoScrollSpeed > 0 && preferences.scroll && !isAutoScrollPaused
-      && readAlong?.status.isActive != true
+      && readAlong?.status.isActive != true && listen?.status.isActive != true
     {
       startAutoScroll()
     } else {
@@ -116,13 +118,22 @@ final class EbookReaderViewModel: EbookReaderView.Model {
     catchUpCheck?.cancel()
     stopAutoScroll()
     tearDownReadAlong()
+    tearDownListen()
     cleanupTemporaryFile()
   }
 
   override func onReadAlongTapped() {
     catchUpMessage = nil
+    if listen?.status.isActive == true {
+      tearDownListen()
+    }
     toggleReadAlong()
     updateAutoScroll()
+  }
+
+  override func onListenTapped() {
+    catchUpMessage = nil
+    toggleListen()
   }
 
   override func onCatchUpTapped() {
@@ -312,6 +323,7 @@ final class EbookReaderViewModel: EbookReaderView.Model {
       updateProgress()
       updateCurrentChapterIndex()
       supportsReadAlong = isReadAlongSupported
+      supportsListen = isListenSupported
       refreshCatchUpOffer()
 
       await setupChapters()
@@ -661,7 +673,7 @@ final class EbookReaderViewModel: EbookReaderView.Model {
     readAlong?.status == .following ? 15 : 1
   }
 
-  private func syncProgressToServer(_ progress: Double) {
+  func syncProgressToServer(_ progress: Double) {
     guard let bookID else { return }
 
     var location = navigator?.currentLocation

@@ -78,6 +78,22 @@ class EbookReaderPreferences: ObservableObject {
   @AppStorage("ebookReader.readAlongHighlightsWord") var readAlongHighlightsWord: Bool = true
   @AppStorage("ebookReader.readAlongHighlightsSentence") var readAlongHighlightsSentence: Bool = true
 
+  @AppStorage("ebookReader.listenSpeed") var listenSpeed: Double = 1.0
+  @AppStorage("ebookReader.listenLanguageCode") private var listenLanguageCodeStorage: String = ""
+  @AppStorage("ebookReader.listenVoiceIdentifier") private var listenVoiceIdentifierStorage: String = ""
+
+  var listenLanguageCode: String? {
+    get { listenLanguageCodeStorage.isEmpty ? nil : listenLanguageCodeStorage }
+    set { listenLanguageCodeStorage = newValue ?? "" }
+  }
+
+  var listenVoiceIdentifier: String? {
+    get { listenVoiceIdentifierStorage.isEmpty ? nil : listenVoiceIdentifierStorage }
+    set { listenVoiceIdentifierStorage = newValue ?? "" }
+  }
+
+  static let listenSpeedPresets: [Double] = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+
   @AppStorage("ebookReader.tapZonesData") private var tapZonesData: Data = Data()
 
   var tapZones: [EbookTapZone] {

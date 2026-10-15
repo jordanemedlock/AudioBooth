@@ -100,6 +100,10 @@ extension EbookReaderViewModel {
   }
 
   private func startReadAlong() {
+    if listen?.status.isActive == true {
+      tearDownListen()
+    }
+
     guard #available(iOS 26.0, *) else {
       Toast(error: String(localized: "Read Along requires iOS 26 or later.")).show()
       return

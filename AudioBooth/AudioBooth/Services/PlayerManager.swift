@@ -394,6 +394,11 @@ extension PlayerManager {
 
     commandCenter.playCommand.isEnabled = true
     commandCenter.playCommand.addTarget { [weak self] _ in
+      if let listen = EbookListenRemoteCommands.active {
+        listen.onTogglePlayPause?()
+        return .success
+      }
+
       guard let self, let current else { return .commandFailed }
 
       if AVAudioSession.sharedInstance().outputVolume == 0 {
@@ -408,6 +413,11 @@ extension PlayerManager {
 
     commandCenter.pauseCommand.isEnabled = true
     commandCenter.pauseCommand.addTarget { [weak self] _ in
+      if let listen = EbookListenRemoteCommands.active {
+        listen.onTogglePlayPause?()
+        return .success
+      }
+
       guard let self, let current else { return .commandFailed }
 
       current.onPauseTapped()
@@ -417,6 +427,11 @@ extension PlayerManager {
 
     commandCenter.togglePlayPauseCommand.isEnabled = true
     commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
+      if let listen = EbookListenRemoteCommands.active {
+        listen.onTogglePlayPause?()
+        return .success
+      }
+
       guard let self, let current else { return .commandFailed }
 
       current.onTogglePlaybackTapped()
@@ -438,6 +453,11 @@ extension PlayerManager {
       NSNumber(value: userPreferences.skipForwardInterval)
     ]
     commandCenter.skipForwardCommand.addTarget { [weak self] event in
+      if let listen = EbookListenRemoteCommands.active {
+        listen.onNextSentence?()
+        return .success
+      }
+
       guard let self, let current else { return .commandFailed }
 
       let interval: Double
@@ -457,6 +477,11 @@ extension PlayerManager {
       NSNumber(value: userPreferences.skipBackwardInterval)
     ]
     commandCenter.skipBackwardCommand.addTarget { [weak self] event in
+      if let listen = EbookListenRemoteCommands.active {
+        listen.onPreviousSentence?()
+        return .success
+      }
+
       guard let self, let current else { return .commandFailed }
 
       let interval: Double
@@ -473,6 +498,11 @@ extension PlayerManager {
 
     commandCenter.nextTrackCommand.isEnabled = true
     commandCenter.nextTrackCommand.addTarget { [weak self] _ in
+      if let listen = EbookListenRemoteCommands.active {
+        listen.onNextSentence?()
+        return .success
+      }
+
       guard let self, let current else { return .commandFailed }
 
       if userPreferences.lockScreenNextPreviousUsesChapters, let chapters = current.chapters, !chapters.chapters.isEmpty
@@ -486,6 +516,11 @@ extension PlayerManager {
 
     commandCenter.previousTrackCommand.isEnabled = true
     commandCenter.previousTrackCommand.addTarget { [weak self] _ in
+      if let listen = EbookListenRemoteCommands.active {
+        listen.onPreviousSentence?()
+        return .success
+      }
+
       guard let self, let current else { return .commandFailed }
 
       if userPreferences.lockScreenNextPreviousUsesChapters, let chapters = current.chapters, !chapters.chapters.isEmpty

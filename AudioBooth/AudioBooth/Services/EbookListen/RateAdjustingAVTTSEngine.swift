@@ -10,8 +10,8 @@ final class RateAdjustingAVTTSEngine: @unchecked Sendable {
   let engine: AVTTSEngine
 
   init() {
-    rateDelegate.owner = self
     engine = AVTTSEngine(delegate: rateDelegate)
+    rateDelegate.owner = self
   }
 
   private final class RateDelegate: NSObject, AVTTSEngineDelegate {

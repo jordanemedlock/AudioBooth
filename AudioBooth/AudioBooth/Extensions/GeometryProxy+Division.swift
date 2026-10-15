@@ -2,7 +2,9 @@ import SwiftUI
 
 extension GeometryProxy {
   var leadingPanelWidth: CGFloat? {
-    #if targetEnvironment(macCatalyst)
+    #if CI_BUILD
+    return nil
+    #elseif targetEnvironment(macCatalyst)
     return nil
     #else
     guard #available(iOS 27.1, *) else { return nil }
@@ -12,7 +14,9 @@ extension GeometryProxy {
   }
 
   var topPanelHeight: CGFloat? {
-    #if targetEnvironment(macCatalyst)
+    #if CI_BUILD
+    return nil
+    #elseif targetEnvironment(macCatalyst)
     return nil
     #else
     guard #available(iOS 27.1, *) else { return nil }

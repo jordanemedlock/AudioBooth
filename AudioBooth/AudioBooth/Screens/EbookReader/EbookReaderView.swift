@@ -132,15 +132,6 @@ struct EbookReaderView: View {
       .animation(.easeInOut(duration: 0.2), value: showControls)
       .animation(.easeInOut(duration: 0.25), value: model.catchUpMessage)
       .animation(.easeInOut(duration: 0.25), value: model.readAlong?.status)
-      .animation(.easeInOut(duration: 0.25), value: model.listen?.status)
-      .overlay(alignment: .bottom) {
-        if let listen = model.listen, listen.status.isActive, !model.isLoading, model.error == nil {
-          EbookListenControlsView(listen: listen, preferences: model.preferences)
-            .padding(.horizontal, 12)
-            .padding(.bottom, showControls ? 72 : 24)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-      }
       .overlay {
         if showZoneEditor {
           EbookTapZonesEditorView(preferences: model.preferences) {
@@ -277,14 +268,6 @@ struct EbookReaderView: View {
   }
 
   private func occlusionInsets(in proxy: GeometryProxy) -> EdgeInsets {
-    #if CI_BUILD
-    return EdgeInsets(
-      top: 0,
-      leading: proxy.safeAreaInsets.leading,
-      bottom: 0,
-      trailing: proxy.safeAreaInsets.trailing
-    )
-    #else
     #if !targetEnvironment(macCatalyst)
     if #available(iOS 27.1, *) {
       var insets = EdgeInsets()
@@ -298,13 +281,13 @@ struct EbookReaderView: View {
       return insets
     }
     #endif
+
     return EdgeInsets(
       top: 0,
       leading: proxy.safeAreaInsets.leading,
       bottom: 0,
       trailing: proxy.safeAreaInsets.trailing
     )
-    #endif
   }
 
   private func cornerInsets(in proxy: GeometryProxy) -> EdgeInsets {
@@ -386,19 +369,6 @@ struct EbookReaderView: View {
   }
 
   @ViewBuilder
-  private var listenIcon: some View {
-    switch model.listen?.status {
-    case .playing:
-      Image(systemName: "ear")
-        .symbolEffect(.variableColor.iterative, options: .repeating)
-    case .paused:
-      Image(systemName: "ear")
-    case .off, .none:
-      Image(systemName: "ear")
-    }
-  }
-
-  @ViewBuilder
   private var readAlongIcon: some View {
     switch model.readAlong?.status {
     case .preparing:
@@ -477,20 +447,6 @@ struct EbookReaderView: View {
         }
       }
       .frame(maxWidth: .infinity)
-
-      if model.supportsListen {
-        Button(action: { model.onListenTapped() }) {
-          VStack(spacing: 6) {
-            listenIcon
-              .font(.system(size: 20))
-              .frame(height: 20)
-            Text("Listen")
-              .font(.caption2)
-          }
-        }
-        .frame(maxWidth: .infinity)
-        .tint(model.listen?.status.isActive == true ? .accentColor : .primary)
-      }
 
       if model.supportsReadAlong {
         Button(action: { model.onReadAlongTapped() }) {
@@ -589,9 +545,7 @@ extension EbookReaderView {
     var supportsSearch: Bool
 
     var supportsReadAlong: Bool
-    var supportsListen: Bool
     var readAlong: ReadAlongCoordinator?
-    var listen: EbookListenCoordinator?
     var catchUpMessage: LocalizedStringResource?
     var isCatchingUpToNarration: Bool = false
     var positionSync: PositionSyncSheet.Model?
@@ -609,7 +563,6 @@ extension EbookReaderView {
     func onAutoScrollPlayPauseTapped() {}
     func onShowControlsChanged(_ isVisible: Bool) {}
     func onReadAlongTapped() {}
-    func onListenTapped() {}
     func onCatchUpTapped() {}
     func onCatchUpDismissed(_ scope: PositionSyncOffer.Dismissal) {}
     func onNowPlayingTapped() {}
@@ -626,8 +579,7 @@ extension EbookReaderView {
       supportsSettings: Bool = false,
       search: EbookSearchView.Model? = nil,
       supportsSearch: Bool = false,
-      supportsReadAlong: Bool = false,
-      supportsListen: Bool = false
+      supportsReadAlong: Bool = false
     ) {
       self.isLoading = isLoading
       self.error = error
@@ -641,7 +593,6 @@ extension EbookReaderView {
       self.search = search
       self.supportsSearch = supportsSearch
       self.supportsReadAlong = supportsReadAlong
-      self.supportsListen = supportsListen
     }
   }
 }

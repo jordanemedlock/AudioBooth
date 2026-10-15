@@ -1,0 +1,162 @@
+name: iOS
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROJECT_PATH: AudioBooth/AudioBooth.xcodeproj
+  SCHEME: AudioBooth
+  DERIVED_DATA: ${{ github.workspace }}/build/DerivedData
+
+jobs:
+  build-and-test:
+    name: Simulator build & tests
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26+
+        run: |
+          set -euo pipefail
+          select_xcode() {
+            local app="$1"
+            if [ -d "$app" ]; then
+              sudo xcode-select -s "$app/Contents/Developer"
+              return 0
+            fi
+            return 1
+          }
+          for candidate in /Applications/Xcode_26*.app /Applications/Xcode.app; do
+            if select_xcode "$candidate" 2>/dev/null; then
+              major=$(xcodebuild -version | sed -n '1s/Xcode //p' | cut -d. -f1)
+              if [ "${major:-0}" -ge 26 ]; then
+                xcodebuild -version
+                exit 0
+              fi
+            fi
+          done
+          echo "No Xcode 26+ found on runner" >&2
+          ls -la /Applications >&2 || true
+          exit 1
+
+      - name: CI signing config (Local.xcconfig)
+        run: bash scripts/ci/generate-local-xcconfig.sh
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$PROJECT_PATH" \
+            -scheme "$SCHEME"
+
+      - name: Install iOS platform & pick simulator
+        run: bash scripts/ci/ios-ci-setup.sh
+
+      - name: Build for iOS Simulator
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project "$PROJECT_PATH" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -destination "$IOS_SIMULATOR_DESTINATION" \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Run tests (if any)
+        run: |
+          set -euo pipefail
+          if ! python3 -c "import json, os, subprocess; data=json.loads(subprocess.check_output(['xcodebuild','-list','-project',os.environ['PROJECT_PATH'],'-json'])); targets=data.get('project',{}).get('targets',[]); raise SystemExit(0 if any('test' in t.lower() for t in targets) else 1)"; then
+            echo "No XCTest targets in project; skipping test action."
+            exit 0
+          fi
+          xcodebuild test \
+            -project "$PROJECT_PATH" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -destination "$IOS_SIMULATOR_DESTINATION" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -enableCodeCoverage NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+  unsigned-device-ipa:
+    name: Unsigned device .ipa
+    runs-on: macos-latest
+    timeout-minutes: 120
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26+
+        run: |
+          set -euo pipefail
+          for candidate in /Applications/Xcode_26*.app /Applications/Xcode.app; do
+            if [ -d "$candidate" ]; then
+              sudo xcode-select -s "$candidate/Contents/Developer"
+              major=$(xcodebuild -version | sed -n '1s/Xcode //p' | cut -d. -f1)
+              if [ "${major:-0}" -ge 26 ]; then
+                xcodebuild -version
+                exit 0
+              fi
+            fi
+          done
+          echo "No Xcode 26+ found on runner" >&2
+          exit 1
+
+      - name: CI signing config (Local.xcconfig)
+        run: bash scripts/ci/generate-local-xcconfig.sh
+
+      - name: Sideload-safe entitlements (CI only)
+        run: |
+          bash scripts/ci/apply-sideload-entitlements.sh
+          echo "::notice::Embedded Watch app + iOS/home-screen widgets remain in the .ipa; free Apple IDs often cannot sideload watch/widget extensions. Sideloadly may install the main app only."
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$PROJECT_PATH" \
+            -scheme "$SCHEME"
+
+      - name: Install iOS device platform
+        run: bash scripts/ci/ios-device-setup.sh
+
+      - name: Build unsigned iOS device app
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project "$PROJECT_PATH" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package unsigned .ipa
+        run: |
+          set -euo pipefail
+          APP="$(find "$DERIVED_DATA/Build/Products" -path '*/Release-iphoneos/AudioBooth.app' -type d | head -1)"
+          if [ -z "$APP" ]; then
+            echo "AudioBooth.app not found under $DERIVED_DATA" >&2
+            find "$DERIVED_DATA" -name 'AudioBooth.app' >&2 || true
+            exit 1
+          fi
+          mkdir -p build/artifact
+          bash scripts/ci/package-unsigned-ipa.sh "$APP" build/artifact
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AudioBooth-unsigned-ipa
+          path: build/artifact/AudioBooth-unsigned.ipa
+          if-no-files-found: error

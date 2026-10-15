@@ -18,6 +18,15 @@ private struct HingeStatusModifier: ViewModifier {
     #if targetEnvironment(macCatalyst)
     content
     #else
+    hingeAwareBody(content: content)
+    #endif
+  }
+
+  @ViewBuilder
+  private func hingeAwareBody(content: Content) -> some View {
+    #if CI_BUILD
+    content
+    #else
     if #available(iOS 27.1, *) {
       content
         .onHingeChange { _, newContext in

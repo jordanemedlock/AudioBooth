@@ -268,6 +268,14 @@ struct EbookReaderView: View {
   }
 
   private func occlusionInsets(in proxy: GeometryProxy) -> EdgeInsets {
+    #if CI_BUILD
+    return EdgeInsets(
+      top: 0,
+      leading: proxy.safeAreaInsets.leading,
+      bottom: 0,
+      trailing: proxy.safeAreaInsets.trailing
+    )
+    #else
     #if !targetEnvironment(macCatalyst)
     if #available(iOS 27.1, *) {
       var insets = EdgeInsets()
@@ -281,13 +289,13 @@ struct EbookReaderView: View {
       return insets
     }
     #endif
-
     return EdgeInsets(
       top: 0,
       leading: proxy.safeAreaInsets.leading,
       bottom: 0,
       trailing: proxy.safeAreaInsets.trailing
     )
+    #endif
   }
 
   private func cornerInsets(in proxy: GeometryProxy) -> EdgeInsets {

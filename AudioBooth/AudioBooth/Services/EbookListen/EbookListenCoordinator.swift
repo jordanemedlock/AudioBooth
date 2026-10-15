@@ -79,7 +79,7 @@ final class EbookListenCoordinator: PublicationSpeechSynthesizerDelegate {
         publication: publication,
         config: Self.initialConfig(preferences: preferences),
         audioSession: ReadiumAudioSessionBridge(),
-        engineFactory: { engine }
+        engineFactory: { engine.engine }
       )
     else {
       return nil

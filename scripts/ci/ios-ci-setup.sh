@@ -5,11 +5,18 @@ set -euo pipefail
 PROJECT_PATH="${PROJECT_PATH:?}"
 SCHEME="${SCHEME:?}"
 
-if ! xcodebuild -showdestinations -project "$PROJECT_PATH" -scheme "$SCHEME" 2>/dev/null \
-  | grep -q 'platform:iOS Simulator'; then
-  echo "iOS Simulator runtime missing; downloading iOS platform (this can take several minutes)…"
-  xcodebuild -downloadPlatform iOS
-fi
+download_if_missing() {
+  local platform="$1"
+  local pattern="$2"
+  if ! xcodebuild -showdestinations -project "$PROJECT_PATH" -scheme "$SCHEME" 2>/dev/null | grep -q "$pattern"; then
+    echo "${platform} platform missing; downloading (can take several minutes)…"
+    xcodebuild -downloadPlatform "$platform"
+  fi
+}
+
+download_if_missing iOS 'platform:iOS Simulator'
+# AudioBooth embeds a Watch app; the scheme requires watchOS SDK/simulator components.
+download_if_missing watchOS 'platform:watchOS Simulator'
 
 DEST=""
 while IFS= read -r line; do

@@ -5,11 +5,13 @@ set -euo pipefail
 PROJECT_PATH="${PROJECT_PATH:?}"
 SCHEME="${SCHEME:?}"
 
-if ! xcodebuild -showdestinations -project "$PROJECT_PATH" -scheme "$SCHEME" 2>/dev/null \
-  | grep -q 'platform:iOS, id:dvtdevice-DVTiPhonePlaceholder'; then
-  echo "iOS device platform missing; downloading iOS platform…"
-  xcodebuild -downloadPlatform iOS
-fi
+for platform in iOS watchOS; do
+  if ! xcodebuild -showdestinations -project "$PROJECT_PATH" -scheme "$SCHEME" 2>/dev/null \
+    | grep -qi "platform:${platform}"; then
+    echo "${platform} platform missing; downloading…"
+    xcodebuild -downloadPlatform "$platform"
+  fi
+done
 
 if ! xcodebuild -showdestinations -project "$PROJECT_PATH" -scheme "$SCHEME" 2>/dev/null \
   | grep -q 'platform:iOS, id:dvtdevice-DVTiPhonePlaceholder'; then

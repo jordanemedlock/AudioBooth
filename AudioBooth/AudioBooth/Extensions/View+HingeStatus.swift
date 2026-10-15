@@ -17,7 +17,14 @@ private struct HingeStatusModifier: ViewModifier {
   func body(content: Content) -> some View {
     #if targetEnvironment(macCatalyst)
     content
-    #elseif __IPHONE_OS_VERSION_MAX_ALLOWED >= 270100
+    #else
+    hingeAwareBody(content)
+    #endif
+  }
+
+  @ViewBuilder
+  private func hingeAwareBody(content: Content) -> some View {
+    #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 270100
     if #available(iOS 27.1, *) {
       content
         .onHingeChange { _, newContext in

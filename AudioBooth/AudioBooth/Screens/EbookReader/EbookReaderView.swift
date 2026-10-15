@@ -277,7 +277,7 @@ struct EbookReaderView: View {
   }
 
   private func occlusionInsets(in proxy: GeometryProxy) -> EdgeInsets {
-    #if !targetEnvironment(macCatalyst)
+    #if !CI_BUILD && !targetEnvironment(macCatalyst)
     if #available(iOS 27.1, *) {
       var insets = EdgeInsets()
       for region in proxy.reservedRegions(kind: .occlusion) {

@@ -18,7 +18,7 @@ jobs:
   build-and-test:
     name: Simulator build & tests
     runs-on: macos-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -55,6 +55,9 @@ jobs:
             -project "$PROJECT_PATH" \
             -scheme "$SCHEME"
 
+      - name: Install iOS platform & pick simulator
+        run: bash scripts/ci/ios-ci-setup.sh
+
       - name: Build for iOS Simulator
         run: |
           set -euo pipefail
@@ -62,7 +65,7 @@ jobs:
             -project "$PROJECT_PATH" \
             -scheme "$SCHEME" \
             -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "$IOS_SIMULATOR_DESTINATION" \
             -derivedDataPath "$DERIVED_DATA" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -79,7 +82,7 @@ jobs:
             -project "$PROJECT_PATH" \
             -scheme "$SCHEME" \
             -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "$IOS_SIMULATOR_DESTINATION" \
             -derivedDataPath "$DERIVED_DATA" \
             -enableCodeCoverage NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -89,7 +92,7 @@ jobs:
   unsigned-device-ipa:
     name: Unsigned device .ipa
     runs-on: macos-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     needs: build-and-test
     steps:
       - uses: actions/checkout@v4
@@ -123,6 +126,9 @@ jobs:
           xcodebuild -resolvePackageDependencies \
             -project "$PROJECT_PATH" \
             -scheme "$SCHEME"
+
+      - name: Install iOS device platform
+        run: bash scripts/ci/ios-device-setup.sh
 
       - name: Build unsigned iOS device app
         run: |

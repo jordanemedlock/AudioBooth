@@ -18,7 +18,7 @@ private struct HingeStatusModifier: ViewModifier {
     #if targetEnvironment(macCatalyst)
     content
     #else
-    hingeAwareBody(content)
+    hingeAwareBody(content: content)
     #endif
   }
 

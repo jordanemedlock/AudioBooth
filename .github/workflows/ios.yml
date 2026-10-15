@@ -74,7 +74,7 @@ jobs:
       - name: Run tests (if any)
         run: |
           set -euo pipefail
-          if ! xcodebuild -list -project "$PROJECT_PATH" | grep -qE 'Tests|Test\.'; then
+          if ! python3 -c "import json, os, subprocess; data=json.loads(subprocess.check_output(['xcodebuild','-list','-project',os.environ['PROJECT_PATH'],'-json'])); targets=data.get('project',{}).get('targets',[]); raise SystemExit(0 if any('test' in t.lower() for t in targets) else 1)"; then
             echo "No XCTest targets in project; skipping test action."
             exit 0
           fi

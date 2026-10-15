@@ -232,11 +232,11 @@ final class EbookListenCoordinator: PublicationSpeechSynthesizerDelegate {
       .removeDuplicates()
       .throttle(for: 0.8, scheduler: RunLoop.main, latest: true)
       .sink { [weak self] locator in
-        guard let self, let navigator, !isNavigating else { return }
-        isNavigating = true
+        guard let self, let navigator, !self.isNavigating else { return }
+        self.isNavigating = true
         Task {
           await navigator.go(to: locator, options: NavigatorGoOptions(animated: false))
-          isNavigating = false
+          self.isNavigating = false
         }
       }
       .store(in: &subscriptions)

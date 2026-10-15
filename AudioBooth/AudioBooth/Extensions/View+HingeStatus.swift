@@ -24,7 +24,9 @@ private struct HingeStatusModifier: ViewModifier {
 
   @ViewBuilder
   private func hingeAwareBody(content: Content) -> some View {
-    #if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 270100)
+    #if CI_BUILD
+    content
+    #else
     if #available(iOS 27.1, *) {
       content
         .onHingeChange { _, newContext in
@@ -38,8 +40,6 @@ private struct HingeStatusModifier: ViewModifier {
     } else {
       content
     }
-    #else
-    content
     #endif
   }
 }

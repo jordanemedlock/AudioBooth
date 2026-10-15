@@ -86,7 +86,7 @@ extension EbookReaderViewModel {
     case .temporary:
       let title = publication?.metadata.title ?? String(localized: "Ebook")
       let author = publication?.metadata.authors.map(\.name).joined(separator: ", ")
-      return ("temporary-ebook", title, author.nilIfEmpty, nil)
+      return ("temporary-ebook", title, author?.nilIfEmpty, nil)
     }
   }
 }

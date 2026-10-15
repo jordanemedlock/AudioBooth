@@ -16,7 +16,7 @@ final class EbookReaderViewModel: EbookReaderView.Model {
     case temporary(URL)
   }
 
-  private let source: Source
+  let source: Source
   var bookID: String? {
     switch source {
     case .local(_, let bookID): return bookID
